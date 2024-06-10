@@ -1,0 +1,9 @@
+[package]
+name = "fa-bench"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+noodles-bgzf = { version = "0.30.0", features = ["async", "libdeflate"] }
+noodles-fasta = { version = "0.39.0", features = ["async"] }
+tokio = { version = "1.38.0", features = ["full"] }
