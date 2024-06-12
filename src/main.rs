@@ -1,6 +1,6 @@
 use clap::Parser;
 use noodles_bgzf as bgzf;
-use noodles_fasta::io::Reader;
+use noodles_fasta as fasta;
 use std::fs::File;
 use std::io;
 use std::path::PathBuf;
@@ -16,7 +16,7 @@ fn main() -> io::Result<()> {
     let opts = CliOpts::parse();
     let input_path = File::open(opts.input_path)?;
     let mut bgzf_reader = bgzf::Reader::new(input_path);
-    let mut fasta_reader = Reader::new(&mut bgzf_reader);
+    let mut fasta_reader = fasta::io::Reader::new(&mut bgzf_reader);
     let records = fasta_reader.records();
     let mut g_count = 0;
     for rec in records {
