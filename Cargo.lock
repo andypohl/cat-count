@@ -203,6 +203,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "noodles-bgzf",
+ "noodles-core",
  "noodles-fasta",
  "tokio",
 ]
