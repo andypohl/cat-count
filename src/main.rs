@@ -8,7 +8,6 @@ use std::io;
 use std::io::BufReader;
 use std::io::Seek;
 use std::path::PathBuf;
-use std::sync::Arc;
 
 #[derive(Parser, Debug)]
 struct CliOpts {
@@ -33,9 +32,9 @@ fn path_exists(path: &str) -> Result<PathBuf, String> {
     }
 }
 
-fn g_count(fai_rec: &FaiRecord, input_path: Arc<PathBuf>) -> usize {
+fn g_count(fai_rec: &FaiRecord, input_path: &PathBuf) -> usize {
     let mut buf: Vec<u8> = Vec::new();
-    let mut input_file = File::open(input_path.as_ref()).unwrap();
+    let mut input_file = File::open(input_path).unwrap();
     input_file
         .seek(io::SeekFrom::Start(fai_rec.offset()))
         .unwrap();
@@ -49,10 +48,10 @@ fn main() -> io::Result<()> {
     let fai_file = File::open(&opts.fai_path)?;
     let mut index = fasta::fai::Reader::new(BufReader::new(fai_file));
     let index_records = index.read_index().unwrap();
-    let input_path = Arc::new(opts.input_path);
+    let input_path = opts.input_path;
     let g_counted: usize = index_records
         .par_iter()
-        .map(|fai_rec| g_count(&fai_rec, input_path.clone()))
+        .map(|fai_rec| g_count(&fai_rec, &input_path))
         .sum();
     println!("Number of Gs: {}", g_counted);
 
