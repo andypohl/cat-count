@@ -1,12 +1,12 @@
 use clap::Parser;
+use noodles_bgzf as bgzf;
+use noodles_bgzf::io::Seek;
 use noodles_fasta as fasta;
 use noodles_fasta::fai::Record as FaiRecord;
-
 use rayon::prelude::*;
 use std::fs::File;
 use std::io;
 use std::io::BufReader;
-use std::io::Seek;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -17,6 +17,9 @@ struct CliOpts {
 
     #[arg(required = true, value_parser = path_exists)]
     pub fai_path: PathBuf,
+
+    #[arg(required = true, value_parser = path_exists)]
+    pub gzi_path: PathBuf,
 }
 
 /// Custom validator to check if a path exists
@@ -32,13 +35,13 @@ fn path_exists(path: &str) -> Result<PathBuf, String> {
     }
 }
 
-fn g_count(fai_rec: &FaiRecord, input_path: &PathBuf) -> usize {
+fn g_count(fai_rec: &FaiRecord, bgzf_index: &bgzf::gzi::Index, input_path: &PathBuf) -> usize {
     let mut buf: Vec<u8> = Vec::new();
-    let mut input_file = File::open(input_path).unwrap();
-    input_file
-        .seek(io::SeekFrom::Start(fai_rec.offset()))
+    let mut bgzf_reader = bgzf::Reader::new(File::open(input_path).unwrap());
+    bgzf_reader
+        .seek_with_index(bgzf_index, io::SeekFrom::Start(fai_rec.offset()))
         .unwrap();
-    let mut fasta_reader = fasta::io::Reader::new(BufReader::new(input_file));
+    let mut fasta_reader = fasta::io::Reader::new(BufReader::new(bgzf_reader));
     fasta_reader.read_sequence(&mut buf).unwrap();
     buf.iter().filter(|&b| matches!(*b, b'G' | b'g')).count()
 }
@@ -46,12 +49,13 @@ fn g_count(fai_rec: &FaiRecord, input_path: &PathBuf) -> usize {
 fn main() -> io::Result<()> {
     let opts = CliOpts::parse();
     let fai_file = File::open(&opts.fai_path)?;
+    let bgzf_index = bgzf::gzi::read(&opts.gzi_path).unwrap();
     let mut index = fasta::fai::Reader::new(BufReader::new(fai_file));
     let index_records = index.read_index().unwrap();
     let input_path = opts.input_path;
     let g_counted: usize = index_records
         .par_iter()
-        .map(|fai_rec| g_count(&fai_rec, &input_path))
+        .map(|fai_rec| g_count(&fai_rec, &bgzf_index, &input_path))
         .sum();
     println!("Number of Gs: {}", g_counted);
 
