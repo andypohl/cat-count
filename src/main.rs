@@ -5,9 +5,7 @@ use noodles_fasta as fasta;
 use noodles_fasta::fai::Record as FaiRecord;
 use rayon::prelude::*;
 use std::fs::File;
-use std::io;
-use std::io::BufReader;
-use std::io::Read;
+use std::io::{self, BufReader, Read};
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
