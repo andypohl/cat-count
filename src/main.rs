@@ -9,47 +9,59 @@ use std::fs::File;
 use std::io::{self, BufReader, Read};
 use std::path::PathBuf;
 
-struct Triplets<I, T> {
+trait IteratorExt: Iterator<Item = Result<u8, std::io::Error>>
+where
+    Self: Sized,
+{
+    fn triplets(self) -> Triplets<Self> {
+        Triplets::new(self)
+    }
+}
+
+impl<I> IteratorExt for I where I: Iterator<Item = Result<u8, std::io::Error>> + Sized {}
+
+struct Triplets<I>
+where
+    I: Iterator<Item = Result<u8, std::io::Error>>,
+{
     inner: I,
-    buffer: [T; 3],
+    buffer: [u8; 3],
     length: usize,
 }
 
-impl<I, T, E> Triplets<I, T>
+impl<I> Triplets<I>
 where
-    I: Iterator<Item = Result<T, E>>,
-    T: Default + Copy,
+    I: Iterator<Item = Result<u8, std::io::Error>>,
 {
     fn new(inner: I) -> Self {
         Self {
             inner,
-            buffer: [T::default(); 3],
+            buffer: [0; 3],
             length: 0,
         }
     }
 }
 
-impl<I, T, E> Iterator for Triplets<I, T>
+impl<I> Iterator for Triplets<I>
 where
-    I: Iterator<Item = Result<T, E>>,
-    T: Clone + Copy + Default,
+    I: Iterator<Item = Result<u8, std::io::Error>>,
 {
-    type Item = [T; 3];
+    type Item = [u8; 3];
 
     fn next(&mut self) -> Option<Self::Item> {
         while self.length < 2 {
             match self.inner.next() {
-                Some(Ok(t)) => {
-                    self.buffer[self.length + 1] = t;
+                Some(Ok(val)) => {
+                    self.buffer[self.length + 1] = val.to_ascii_uppercase();
                     self.length += 1;
                 }
                 _ => return None,
             }
         }
         match self.inner.next() {
-            Some(Ok(t)) => {
+            Some(Ok(val)) => {
                 self.buffer.rotate_left(1);
-                self.buffer[2] = t;
+                self.buffer[2] = val.to_ascii_uppercase();
                 Some(self.buffer)
             }
             _ => None,
@@ -89,8 +101,11 @@ fn g_count(fai_rec: &FaiRecord, bgzf_index: &bgzf::gzi::Index, input_path: &Path
         .seek_with_index(bgzf_index, io::SeekFrom::Start(fai_rec.offset()))
         .unwrap();
     let mut fasta_reader = fasta::io::Reader::new(BufReader::new(bgzf_reader));
-    Triplets::new(fasta_reader.sequence_reader().bytes())
-        .filter(|trip| trip.to_ascii_uppercase() == b"CAT")
+    fasta_reader
+        .sequence_reader()
+        .bytes()
+        .triplets()
+        .filter(|trip| trip == b"CAT")
         .count()
 }
 
