@@ -8,21 +8,23 @@ use rayon::prelude::*;
 use std::fs::File;
 use std::io::{self, BufReader, Read};
 use std::path::PathBuf;
-use std::vec::Vec;
 
 struct Triplets<I, T> {
     inner: I,
-    buffer: Vec<T>,
+    buffer: [T; 3],
+    length: usize,
 }
 
 impl<I, T, E> Triplets<I, T>
 where
     I: Iterator<Item = Result<T, E>>,
+    T: Default + Copy,
 {
     fn new(inner: I) -> Self {
         Self {
             inner,
-            buffer: Vec::new(),
+            buffer: [T::default(); 3],
+            length: 0,
         }
     }
 }
@@ -30,34 +32,30 @@ where
 impl<I, T, E> Iterator for Triplets<I, T>
 where
     I: Iterator<Item = Result<T, E>>,
-    T: Clone,
+    T: Clone + Copy + Default,
 {
-    type Item = Vec<T>;
+    type Item = [T; 3];
 
     fn next(&mut self) -> Option<Self::Item> {
-        while self.buffer.len() < 3 {
-            if let Some(item) = self.inner.next() {
-                match item {
-                    Ok(thing) => {
-                        self.buffer.push(thing);
-                    }
-                    Err(_) => return None,
+        while self.length < 2 {
+            match self.inner.next() {
+                Some(Ok(t)) => {
+                    self.buffer[self.length + 1] = t;
+                    self.length += 1;
                 }
-            } else {
-                break;
+                _ => return None,
             }
         }
-        if self.buffer.len() == 3 {
-            let val = self.buffer[..3].to_vec();
-            self.buffer.remove(0);
-            Some(val)
-        } else {
-            None
+        match self.inner.next() {
+            Some(Ok(t)) => {
+                self.buffer.rotate_left(1);
+                self.buffer[2] = t;
+                Some(self.buffer)
+            }
+            _ => None,
         }
     }
 }
-
-// Remove the conflicting implementation of Iterator for &mut Triplets<T>
 
 #[derive(Parser, Debug)]
 struct CliOpts {
