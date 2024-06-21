@@ -1,10 +1,10 @@
 use clap::Parser;
+use count_cat::ThreeFileArgs;
 use noodles_bgzf as bgzf;
 use noodles_bgzf::io::Seek;
 use noodles_fasta as fasta;
 use noodles_fasta::fai::Record as FaiRecord;
 use rayon::prelude::*;
-//use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{self, BufReader, Read};
 use std::path::PathBuf;
@@ -59,32 +59,6 @@ where
     }
 }
 
-#[derive(Parser, Debug)]
-struct CliOpts {
-    /// File path
-    #[arg(required = true, value_parser = path_exists)]
-    pub input_path: PathBuf,
-
-    #[arg(required = true, value_parser = path_exists)]
-    pub fai_path: PathBuf,
-
-    #[arg(required = true, value_parser = path_exists)]
-    pub gzi_path: PathBuf,
-}
-
-/// Custom validator to check if a path exists
-fn path_exists(path: &str) -> Result<PathBuf, String> {
-    let path = PathBuf::from(path);
-    if path.exists() {
-        Ok(path)
-    } else {
-        Err(format!(
-            "The specified path '{}' does not exist",
-            path.display()
-        ))
-    }
-}
-
 fn cat_count(fai_rec: &FaiRecord, bgzf_index: &bgzf::gzi::Index, input_path: &PathBuf) -> usize {
     let mut bgzf_reader = bgzf::Reader::new(File::open(input_path).unwrap());
     bgzf_reader
@@ -100,7 +74,7 @@ fn cat_count(fai_rec: &FaiRecord, bgzf_index: &bgzf::gzi::Index, input_path: &Pa
 }
 
 fn main() -> io::Result<()> {
-    let opts = CliOpts::parse();
+    let opts = ThreeFileArgs::parse();
     let fai_file = File::open(&opts.fai_path)?;
     let bgzf_index = bgzf::gzi::read(&opts.gzi_path).unwrap();
     let mut index = fasta::fai::Reader::new(BufReader::new(fai_file));
