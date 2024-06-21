@@ -85,7 +85,7 @@ fn path_exists(path: &str) -> Result<PathBuf, String> {
     }
 }
 
-fn g_count(fai_rec: &FaiRecord, bgzf_index: &bgzf::gzi::Index, input_path: &PathBuf) -> usize {
+fn cat_count(fai_rec: &FaiRecord, bgzf_index: &bgzf::gzi::Index, input_path: &PathBuf) -> usize {
     let mut bgzf_reader = bgzf::Reader::new(File::open(input_path).unwrap());
     bgzf_reader
         .seek_with_index(bgzf_index, io::SeekFrom::Start(fai_rec.offset()))
@@ -108,9 +108,8 @@ fn main() -> io::Result<()> {
     let input_path = opts.input_path;
     let cats_counted: usize = index_records
         .par_iter()
-        .map(|fai_rec| g_count(&fai_rec, &bgzf_index, &input_path))
+        .map(|fai_rec| cat_count(&fai_rec, &bgzf_index, &input_path))
         .sum();
     println!("Number of CATs: {}", cats_counted);
-
     Ok(())
 }
