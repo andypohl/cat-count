@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+async-trait = "0.1.80"
 clap = { version = "4.5.7", features = ["derive"] }
 noodles-bgzf = { version = "0.31.0", features = ["async", "libdeflate"] }
 noodles-core = "0.15.0"

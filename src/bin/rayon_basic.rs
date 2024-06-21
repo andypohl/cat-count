@@ -49,7 +49,7 @@ fn main() -> io::Result<()> {
             |acc1, acc2| Ok(acc1 + acc2),
         );
     match cat_counted {
-        Ok(total) => println!("Total CAT count: {}", total),
+        Ok(total) => println!("Number of CATs: {}", total),
         Err(_) => println!("Error counting CATs"),
     }
     Ok(())
