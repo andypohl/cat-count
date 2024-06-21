@@ -26,19 +26,18 @@ where
 {
     inner: I,
     buffer: [u8; 3],
-    length: usize,
 }
 
 impl<I> Triplets<I>
 where
     I: Iterator<Item = Result<u8, std::io::Error>>,
 {
-    fn new(inner: I) -> Self {
-        Self {
-            inner,
-            buffer: [0; 3],
-            length: 0,
+    fn new(mut inner: I) -> Self {
+        let mut buffer = [0; 3];
+        for (i, val) in inner.by_ref().take(2).enumerate() {
+            buffer[i] = val.unwrap().to_ascii_uppercase();
         }
+        Self { inner, buffer }
     }
 }
 
@@ -49,15 +48,6 @@ where
     type Item = [u8; 3];
 
     fn next(&mut self) -> Option<Self::Item> {
-        while self.length < 2 {
-            match self.inner.next() {
-                Some(Ok(val)) => {
-                    self.buffer[self.length + 1] = val.to_ascii_uppercase();
-                    self.length += 1;
-                }
-                _ => return None,
-            }
-        }
         match self.inner.next() {
             Some(Ok(val)) => {
                 self.buffer.rotate_left(1);
