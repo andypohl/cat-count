@@ -6,6 +6,8 @@ edition = "2021"
 [dependencies]
 async-trait = "0.1.80"
 clap = { version = "4.5.7", features = ["derive"] }
+crossbeam-channel = "0.5.13"
+noodles = { version = "0.77.0", features = ["bgzf", "core", "fasta"] }
 noodles-bgzf = { version = "0.31.0", features = ["async", "libdeflate"] }
 noodles-core = "0.15.0"
 noodles-fasta = { version = "0.40.0", features = ["async"] }

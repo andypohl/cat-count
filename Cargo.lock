@@ -190,6 +190,8 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "clap",
+ "crossbeam-channel",
+ "noodles",
  "noodles-bgzf",
  "noodles-core",
  "noodles-fasta",
@@ -403,6 +405,17 @@ dependencies = [
  "libc",
  "wasi",
  "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "noodles"
+version = "0.77.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f8629ce12eeb2d6483be18af64beb9488840299ecd617be4ec2f4ebf66688e6"
+dependencies = [
+ "noodles-bgzf",
+ "noodles-core",
+ "noodles-fasta",
 ]
 
 [[package]]
